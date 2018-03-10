@@ -92,7 +92,7 @@ static struct reader_args* pop_handle_info(HANDLE wh) {
       return ra;
     }
   }
-  return INVALID_HANDLE_VALUE;
+  return NULL;
 }
 
 static HANDLE CreateWriteMemoryFile(void) {
@@ -121,10 +121,15 @@ FILE* open_output_memstream(void) {
 char* mclose(FILE* wf, size_t* plen) {
   HANDLE wh = (HANDLE)_get_osfhandle(_fileno(wf));
   struct reader_args* ra = pop_handle_info(wh);
-  fclose(wf);
-  WaitForSingleObject(ra->thread_handle, INFINITE);
-  *plen = ra->size;
-  char* data = ra->data;
-  free(ra);
+  char* data;
+  if(ra) {
+    fclose(wf);
+    WaitForSingleObject(ra->thread_handle, INFINITE);
+    *plen = ra->size;
+    data = ra->data;
+    free(ra);
+  } else {
+    data = NULL;
+  }
   return data;
 }
