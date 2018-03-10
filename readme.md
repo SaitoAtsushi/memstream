@@ -20,20 +20,20 @@ make install
 This library provide following three function.
 Please refer to examples also.
 
-### FILE* open_output_memstream(char** str, size_t* n);
+### FILE* open_output_memstream(void);
 
 Open output stream.
-`str` is a pointer to store a pointer to the resulting memory block.
-`n` is a pointer to the variable that wrote the number of bytes.
-`*str` and `*n` will be written by `mclose`.
-Using `*str` or `*n` before run mclose is undefined behavior.
-The stream returned by `open_output_memstream`  must not close with `fclose`.
+The stream returned by `open_output_memstream`  must close with `mclose`.
+Do not close with `fclose`.
 
-Note: null termination don't be added automatically.
-
-### int mclose(FILE* wf);
+### char* mclose(FILE* wf, int* plen);
 
 Close output stream returned by `open_output_memstream`.
+`plen` is a pointer to the variable that wrote the number of bytes.
+Return value is a pointer to resulting memory block.
+You must close the memory block with `free` when it becomes unnecessary.
+
+Note: null termination don't be added automatically.
 
 ### FILE* open_input_memstream(const char* str, size_t len);
 

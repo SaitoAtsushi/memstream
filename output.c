@@ -21,8 +21,9 @@ struct chunk* make_chunk(void) {
 
 struct reader_args {
   HANDLE hReadPipe;
-  size_t* size;
-  char** data;
+  HANDLE thread_handle;
+  size_t size;
+  char* data;
 };
 
 #include <process.h>
@@ -53,74 +54,77 @@ static void reader(void* args) {
     free(i);
     i=t;
   }
-  *(rargs->size) = total_size;
-  *(rargs->data) = data_block;
-  
-  free(rargs);
+  rargs->size = total_size;
+  rargs->data = data_block;
+
   _endthread();
 }
 
 struct handle_info_node {
   HANDLE write_handle;
-  HANDLE thread_handle;
+  struct reader_args* reader;
   struct handle_info_node* next;
 };
 
 static struct handle_info_node* handle_store = NULL;
 static struct handle_info_node** handle_info_head = &handle_store;
 
-static struct handle_info_node* make_handle_info_node(HANDLE wh, HANDLE th) {
+static struct handle_info_node*
+make_handle_info_node(HANDLE wh, struct reader_args* ra) {
   struct handle_info_node* n = malloc(sizeof(struct handle_info_node));
   n->write_handle = wh;
-  n->thread_handle = th;
+  n->reader = ra;
   n->next = NULL;
   return n;
 }
 
-static void push_handle_info(HANDLE wh, HANDLE rh) {
-  struct handle_info_node* n = make_handle_info_node(wh, rh);
+static void push_handle_info(HANDLE wh, struct reader_args* ra) {
+  struct handle_info_node* n = make_handle_info_node(wh, ra);
   n->next = *handle_info_head;
   *handle_info_head = n;
 }
 
-static HANDLE pop_handle_info(HANDLE wh) {
+static struct reader_args* pop_handle_info(HANDLE wh) {
   for(struct handle_info_node** i= handle_info_head; *i; i=&((*i)->next)) {
     if((*i)->write_handle == wh) {
-      HANDLE th = (*i)->thread_handle;
+      struct reader_args* ra = (*i)->reader;
       (*i) = (*i)->next;
-      return th;
+      return ra;
     }
   }
   return INVALID_HANDLE_VALUE;
 }
 
-static HANDLE CreateWriteMemoryFile(LPVOID* data, size_t* n) {
+static HANDLE CreateWriteMemoryFile(void) {
   HANDLE rp, wp;
   BOOL result = CreatePipe(&rp, &wp, NULL, 0);
   if(!result) return INVALID_HANDLE_VALUE;
   struct reader_args* rargs = malloc(sizeof(struct reader_args));
-  *data = NULL;
   rargs->hReadPipe = rp;
-  rargs->data = (char**)data;
-  rargs->size = n;
+  rargs->data = NULL;
+  rargs->size = 0;
   HANDLE th = (HANDLE)_beginthread(reader, 0, rargs);
-  push_handle_info(wp, th);
+  rargs->thread_handle = th;
+  push_handle_info(wp, rargs);
   return wp;
 }
 
 #include <io.h>
 #include <fcntl.h>
 
-FILE* open_output_memstream(char** str, size_t* n) {
-  HANDLE mfh = CreateWriteMemoryFile((LPVOID*) str, n);
+FILE* open_output_memstream(void) {
+  HANDLE mfh = CreateWriteMemoryFile();
   int fd = _open_osfhandle((int)mfh, _O_WRONLY);
   return _fdopen(fd, "w");
 }
 
-int mclose(FILE* wf) {
+char* mclose(FILE* wf, size_t* plen) {
   HANDLE wh = (HANDLE)_get_osfhandle(_fileno(wf));
-  HANDLE th = pop_handle_info(wh);
-  int r = fclose(wf);
-  WaitForSingleObject(th, INFINITE);
-  return r;
+  struct reader_args* ra = pop_handle_info(wh);
+  fclose(wf);
+  WaitForSingleObject(ra->thread_handle, INFINITE);
+  *plen = ra->size;
+  char* data = ra->data;
+  free(ra);
+  return data;
 }
