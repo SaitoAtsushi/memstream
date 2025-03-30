@@ -46,6 +46,6 @@ static HANDLE CreateMemoryFile(const LPVOID data, const DWORD data_size) {
 
 FILE* open_input_memstream(const char* str, size_t len) {
   HANDLE mfh = CreateMemoryFile((const LPVOID) str, (DWORD) len);
-  int fd = _open_osfhandle((int)mfh, _O_RDONLY);
+  int fd = _open_osfhandle((intptr_t)mfh, _O_RDONLY);
   return _fdopen(fd, "r");
 }

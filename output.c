@@ -114,7 +114,7 @@ static HANDLE CreateWriteMemoryFile(void) {
 
 FILE* open_output_memstream(void) {
   HANDLE mfh = CreateWriteMemoryFile();
-  int fd = _open_osfhandle((int)mfh, _O_WRONLY);
+  int fd = _open_osfhandle((intptr_t)mfh, _O_WRONLY);
   return _fdopen(fd, "w");
 }
 

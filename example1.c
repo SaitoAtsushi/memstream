@@ -13,6 +13,6 @@ int main(void) {
   size_t n = 0;
   char* d = mclose(wp, &n);
   printf("\"%s\"\n", d);
-  printf("size = %d", n);
+  printf("size = %zd", n);
   return 0;
 }
