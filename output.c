@@ -45,7 +45,7 @@ static void reader(void* args) {
 
   CloseHandle(rargs->hReadPipe);
 
-  char* data_block = malloc(total_size);
+  char* data_block = malloc(total_size + 1);
   struct chunk* i=chunk_head;
   for(size_t pos = 0; i;) {
     memcpy(&data_block[pos], i->data, i->size);
@@ -54,6 +54,7 @@ static void reader(void* args) {
     free(i);
     i=t;
   }
+  data_block[total_size] = '\0';
   rargs->size = total_size;
   rargs->data = data_block;
 

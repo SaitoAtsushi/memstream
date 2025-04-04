@@ -12,7 +12,6 @@ int fprint_iota(FILE* fp, int count, int start, int step) {
 char* make_string_iota(int count, int start, int step) {
   FILE* fp=open_output_memstream();
   fprint_iota(fp, count, start, step);
-  fputc('\0', fp);
   size_t len;
   char* str = mclose(fp, &len);
   return str;

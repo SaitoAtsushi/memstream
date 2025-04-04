@@ -11,9 +11,8 @@ make install
 
 ## Build requirements
 
-* MinGW32
+* [Mingw-w64](https://www.mingw-w64.org/)
 * Windows10
-* GCC or Clang
 
 ## Privided functions
 
@@ -29,11 +28,11 @@ Do not close with `fclose`.
 ### char* mclose(FILE* wf, int* plen);
 
 Close output stream returned by `open_output_memstream`.
-`plen` is a pointer to the variable that wrote the number of bytes.
+`plen` is a pointer to the variable that wrote the number of bytes, not including the terminating NULL character.
 Return value is a pointer to resulting memory block.
 You must close the memory block with `free` when it becomes unnecessary.
 
-Note: null termination don't be added automatically.
+Note: null termination added automatically.
 
 ### FILE* open_input_memstream(const char* str, size_t len);
 

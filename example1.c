@@ -6,7 +6,7 @@
 int main(void) {
   const char* sample_str = "Hello, This is a sample that accesses memory via the stream.";
   int ch;
-  FILE* fp = open_input_memstream(sample_str, strlen(sample_str)+1);
+  FILE* fp = open_input_memstream(sample_str, strlen(sample_str));
   FILE* wp = open_output_memstream();
   while((ch=getc(fp)) != EOF) fputc(ch, wp);
   fclose(fp);
